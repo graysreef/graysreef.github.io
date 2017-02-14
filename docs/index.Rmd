@@ -61,4 +61,8 @@ leaflet() %>%
 
 ## Rmarkdown
 
-For more options in knitting this HTML document, see [rmarkdown.rstudio.com](http://rmarkdown.rstudio.com/html_document_format.html).
+For more options in knitting this HTML document, see:
+
+- [Rmarkdown](http://rmarkdown.rstudio.com/html_document_format.html)
+
+- [Github Pages](https://pages.github.com/)
