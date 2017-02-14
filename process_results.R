@@ -178,16 +178,73 @@ summarize_spp = function(dir_root='G:/Team_Folders/Steph', spp=c('bsb','gg','rs'
     
   }
 }
+
 summarize_spp(dir_root='G:/Team_Folders/Steph', spp=c('bsb','gg','rs','sp'))
 
 
+####Processing for mortality because it has a differently named geodatabase----
+process_singledir = function(dir_results, dir_simulation, do_csv=T, do_tif=T, do_png=T){
+  # dir_results    = 'G:/Team_Folders/Steph/bsb_2015/2_2_15_FM_bsb_50day_results'
+  # dir_simulation = 'G:/Team_Folders/Steph/bsb_2015/2_2_15_FM_bsb_50day_simulation'
+  
+  run = str_replace(basename(dir_results), '_results', '')
+  
+  # read geodatabase
+  conn_lns = readOGR(file.path(dir_results, 'mortality_0.1_A.gdb'), 'Connectivity', verbose=F)
+  
+  # aggregate across all ToPatchIDs to Gray's Reef (n=4)
+  conn_tbl = conn_lns@data %>%
+    as_tibble() %>%    
+    group_by(FromPatchID) %>%
+    summarize(
+      quantity = sum(Quantity)) %>%
+    ungroup() %>%
+    mutate(
+      percent = quantity / sum(quantity) * 100) %>%
+    arrange(desc(percent))
+  
+  # write to csv
+  if(do_csv){
+    write_csv(conn_tbl, sprintf('%s/connectivity.csv', dir_results))
+  }
+  
+  # get patch id raster, and determine which cells are NA
+  r_id = raster(sprintf('%s/PatchData/patch_ids', dir_simulation)) # plot(r_id)
+  id_NA = !getValues(r_id) %in% conn_tbl$FromPatchID
+  
+  # create rasters for quantity and percent
+  for (v in c('quantity','percent')){
+    
+    # reclassify from patch id to value
+    r = reclassify(r_id, conn_tbl[,c('FromPatchID', v)])
+    
+    # set patch ids without a value to NA
+    r[id_NA] = NA
+    
+    # write to GeoTIFF
+    if(do_tif){
+      writeRaster(r, sprintf('%s/%s.tif', dir_results, v), overwrite=T)
+    }
+    
+    
+    # plot to PNG for easy preview
+    if (do_png){
+      png(sprintf('%s/%s.png', dir_results, v))
+      p = levelplot(r, par.settings=viridisTheme, main=sprintf('%s %s', run, v))
+      print(p)
+      dev.off()  
+    }
+  }
+}
 
+
+##area maps----
 
 library(tidyverse)
 library(raster)
 library(plotly)
 
-r = raster('G:/Team_Folders/Steph/bsb_20113/mean.tif')
+r = raster('G:/Team_Folders/Steph/bsb/mean.tif')
 
 d = data_frame(
   quantity = raster::getValues(r),
@@ -210,9 +267,13 @@ summary(d3)
 
 r2 = setValues(r, d3$cum_pct_quantity)
 
-plot(r2)
+plot(r2) 
 
 x <- rasterToContour(r2, levels=c(10,30,50,80))
+x
+rgdal::writeOGR(x, "G:/Team_Folders/Steph/contours", layer="contour_bsb_mean", driver="ESRI Shapefile")
+
+
 plot(r2, col='Spectral')
 plot(x, add=TRUE)
 
@@ -281,6 +342,12 @@ for (i in 1:length(my.dirs)){
 #   'G:/Team_Folders/Steph/bsb_2015/5_4_15_FM_bsb_50day_simulation')
 #process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2015', do_csv=F, do_tif=F, do_png=T)
 #summarize_sppyr('G:/Team_Folders/Steph/bsb_2015')
+
+
+##sensitivities
+process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_diffusivity')
+process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_mortality')
+
 
 # processed speices per Individual year---- 
 # process_sppyr_dirs('G:/Team_Folders/Steph/gg_2009')

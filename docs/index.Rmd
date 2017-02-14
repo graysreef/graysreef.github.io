@@ -1,0 +1,64 @@
+---
+title: "Map"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Black Seabass Mean Map
+
+Mean sea bass percent larvae contribution.
+
+```{r map, warning=F, message=F}
+# load libraries ----
+library(tidyverse) # install.packages('tidyverse')
+library(raster)
+library(leaflet)
+select = dplyr::select
+stack  = raster::stack
+
+r = raster('G:/Team_Folders/Steph/bsb/mean.tif')
+
+d = data_frame(
+  quantity = raster::getValues(r),
+  cellid   = 1:length(quantity),
+  area_km2 = 8)
+
+d2 = d %>%
+  filter(!is.na(quantity)) %>%
+  arrange(desc(quantity)) %>%
+  mutate(
+    pct_quantity     = quantity/sum(quantity)*100,
+    cum_pct_quantity = cumsum(quantity/sum(quantity)*100),
+    cum_area_km2     = cumsum(area_km2))
+
+#tail(d2) # 7208 km2
+#tail(d2$cum_area_km2, 1) # 7208 km2
+
+d3 = d %>%
+  left_join(d2, by='cellid')
+#summary(d3)
+
+r2 = setValues(r, d3$cum_pct_quantity)
+
+binpal <- colorBin("Spectral", seq(0,100), 10, pretty = FALSE, na.color = "transparent")
+
+leaflet() %>% 
+  addTiles() %>%
+  addProviderTiles('Esri.OceanBasemap') %>%
+  addRasterImage(r2, colors = binpal, opacity = 0.6) %>%
+  addMarkers(lat=31.3855157, lng=-80.8843762, popup = "Gray's Reef") %>%
+  addLegend(
+    pal = binpal, values = seq(0,100),
+    title = "cum % larvae")
+```
+
+## Rmarkdown
+
+For more options in knitting this HTML document, see [rmarkdown.rstudio.com](http://rmarkdown.rstudio.com/html_document_format.html).
