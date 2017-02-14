@@ -1,6 +1,7 @@
 # graysreef.github.io
 
-Gray's Reef Bren School Group Project, Github content
+
+Gray's Reef Bren School Group Project, Github content at https://graysreef.github.io.
 
 For hosted HTML content and scripts for larval dispersal modeling with Bren group project GRAYSREEF
 
@@ -18,7 +19,7 @@ For hosted HTML content and scripts for larval dispersal modeling with Bren grou
 
 ## Links
 
-- [MGET functions](http://code.nicholas.duke.edu/projects/mget/export/HEAD/MGET/Trunk/PythonPackage/dist/TracOnlineDocumentation/Documentation/ArcGISReference/)
+- [MGET functions](http://code.nicholas.duke.edu/projects/mget/browser/MGET/Trunk/PythonPackage/dist/TracOnlineDocumentation/Documentation/ArcGISReference/ArcGISReference.html?format=raw)
   - [Create Larval Dispersal Simulation From ArcGIS Rasters](http://code.nicholas.duke.edu/projects/mget/export/1383/MGET/Trunk/PythonPackage/dist/TracOnlineDocumentation/Documentation/ArcGISReference/LarvalDispersal.CreateSimulationFromArcGISRasters.html)
   - [Load HYCOM GLBa0.08 Currents Into Larval Dispersal Simulation](http://code.nicholas.duke.edu/projects/mget/export/1383/MGET/Trunk/PythonPackage/dist/TracOnlineDocumentation/Documentation/ArcGISReference/LarvalDispersal.LoadHYCOMGLBa0084DEquatorialCurrentsIntoSimulation.html)
   - [Run Larval Dispersal Simulation (2012 Algorithm)](http://code.nicholas.duke.edu/projects/mget/export/1383/MGET/Trunk/PythonPackage/dist/TracOnlineDocumentation/Documentation/ArcGISReference/LarvalDispersal.RunSimulation2012.html)
