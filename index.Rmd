@@ -59,6 +59,15 @@ leaflet() %>%
     title = "cum % larvae")
 ```
 
+## Video
+
+```{r, warning=F, message=F}
+library(vembedr)
+
+embed_youtube(id="wL-nUjYeMXU", width=400, height=200)
+```
+
+
 ## Rmarkdown
 
 For more options in knitting this HTML document, see:
