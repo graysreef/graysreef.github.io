@@ -64,7 +64,7 @@ leaflet() %>%
 ```{r, warning=F, message=F}
 library(vembedr)
 
-embed_youtube(id="wL-nUjYeMXU", width=800, height=600)
+embed_youtube(id="wL-nUjYeMXU", width=672, height=480)
 ```
 
 
