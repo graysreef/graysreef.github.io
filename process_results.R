@@ -420,3 +420,137 @@ process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_mortality')
 # summarize_sppyr('G:/Team_Folders/Steph/bsb_2015')
 # summarize_sppyr('G:/Team_Folders/Steph/bsb_2015_all')
 
+#Process for percent instead of quanity----
+
+summarize_spp = function(dir_root, sp){
+  # given top-level directory and species code, eg "sp" or "rs" or "bsb",
+  # summarize sp_yr/mean.tif across years as sp/mean.tif and sp/cv.tif,
+  # ie average dispersal across year means and variation across year means
+  # dir_root = 'G:/Team_Folders/Steph'; sp='bsb'
+  
+  dirs_results = list.files(dir_root, sprintf('%s_[0-9]{4}$', sp), full.names=T)
+  rasters_mean = sprintf('%s/mean.tif', dirs_results)
+  stack_mean   = stack(rasters_mean)
+  dir_sp = file.path(dir_root, sp)
+  
+  if (!file.exists(dir_sp)) dir.create(dir_sp)
+  
+  r_mean = mean(stack_mean, na.rm=T)
+  r_sd = calc(stack_mean, fun=function(x) sd(x, na.rm=T))
+  r_cv = r_sd / r_mean * 100
+  r_percent =  r_mean/sum(r_mean) * 100
+  
+  for (v in c('mean','cv', 'percent')){
+    
+    r = get(sprintf('r_%s',v))
+    
+    # write to GeoTIFF
+    writeRaster(r, sprintf('%s/%s.tif', dir_sp, v), overwrite=T)
+    
+    # plot to PNG for easy preview
+    png(sprintf('%s/%s.png', dir_sp, v))
+    p = levelplot(r, par.settings=viridisTheme, main=sprintf('%s %s', basename(dir_sp), v))
+    print(p)
+    dev.off()  
+    
+  }
+}
+
+#summarize_spp('G:/Team_Folders/Steph', sp='bsb')
+for (sp in c('bsb','gg','rs','sp')){
+  summarize_spp('G:/Team_Folders/Steph', sp)  
+}
+
+summarize_spp = function(dir_root='G:/Team_Folders/Steph', spp=c('bsb','gg','rs','sp')){
+  # given top-level directory and species code, eg "sp" or "rs" or "bsb",
+  # summarize sp_yr/mean.tif across years as sp/mean.tif and sp/cv.tif,
+  # ie average dispersal across year means and variation across year means
+  # dir_root = 'G:/Team_Folders/Steph'; sp='bsb'
+  
+  dirs_results = file.path(dir_root, spp)
+  rasters_mean = sprintf('%s/mean.tif', dirs_results)
+  stack_mean   = stack(rasters_mean)
+  dir_spp = file.path(dir_root, '_allspp')
+  
+  if (!file.exists(dir_spp)) dir.create(dir_spp)
+  
+  r_mean = mean(stack_mean, na.rm=T)
+  r_sd = calc(stack_mean, fun=function(x) sd(x, na.rm=T))
+  r_cv = r_sd / r_mean * 100
+  
+  for (v in c('mean','cv')){
+    
+    r = get(sprintf('r_%s',v))
+    
+    # write to GeoTIFF
+    writeRaster(r, sprintf('%s/%s.tif', dir_spp, v), overwrite=T)
+    
+    # plot to PNG for easy preview
+    png(sprintf('%s/%s.png', dir_spp, v))
+    p = levelplot(r, par.settings=viridisTheme, main=sprintf('%s %s', basename(dir_spp), v))
+    print(p)
+    dev.off()  
+    
+  }
+}
+
+summarize_spp(dir_root='G:/Team_Folders/Steph', spp=c('bsb','gg','rs','sp'))
+
+
+####Processing for mortality because it has a differently named geodatabase----
+process_singledir = function(dir_results, dir_simulation, do_csv=T, do_tif=T, do_png=T){
+  # dir_results    = 'G:/Team_Folders/Steph/bsb_2015/2_2_15_FM_bsb_50day_results'
+  # dir_simulation = 'G:/Team_Folders/Steph/bsb_2015/2_2_15_FM_bsb_50day_simulation'
+  
+  run = str_replace(basename(dir_results), '_results', '')
+  
+  # read geodatabase
+  conn_lns = readOGR(file.path(dir_results, 'mortality_0.1_A.gdb'), 'Connectivity', verbose=F)
+  
+  # aggregate across all ToPatchIDs to Gray's Reef (n=4)
+  conn_tbl = conn_lns@data %>%
+    as_tibble() %>%    
+    group_by(FromPatchID) %>%
+    summarize(
+      quantity = sum(Quantity)) %>%
+    ungroup() %>%
+    mutate(
+      percent = quantity / sum(quantity) * 100) %>%
+    arrange(desc(percent))
+  
+  # write to csv
+  if(do_csv){
+    write_csv(conn_tbl, sprintf('%s/connectivity.csv', dir_results))
+  }
+  
+  # get patch id raster, and determine which cells are NA
+  r_id = raster(sprintf('%s/PatchData/patch_ids', dir_simulation)) # plot(r_id)
+  id_NA = !getValues(r_id) %in% conn_tbl$FromPatchID
+  
+  # create rasters for quantity and percent
+  for (v in c('quantity','percent')){
+    
+    # reclassify from patch id to value
+    r = reclassify(r_id, conn_tbl[,c('FromPatchID', v)])
+    
+    # set patch ids without a value to NA
+    r[id_NA] = NA
+    
+    # write to GeoTIFF
+    if(do_tif){
+      writeRaster(r, sprintf('%s/%s.tif', dir_results, v), overwrite=T)
+    }
+    
+    
+    # plot to PNG for easy preview
+    if (do_png){
+      png(sprintf('%s/%s.png', dir_results, v))
+      p = levelplot(r, par.settings=viridisTheme, main=sprintf('%s %s', run, v))
+      print(p)
+      dev.off()  
+    }
+  }
+}
+
+
+
