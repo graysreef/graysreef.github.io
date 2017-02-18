@@ -285,6 +285,27 @@ for (i in 1:length(my.dirs)){
 
 #Process for percent instead of quanity----
 
+calculate_percent = function(dir_root ){
+  for (sp in c('bsb','gg','rs','sp')){
+    print(sp)
+    sp_result = sprintf ('%s.*results', sp )
+    print(sp_result)
+    sp_folders = list.files(dir_root, pattern = sp_result, include.dirs = T, full.names = T)
+    print (sp_folders)
+    for (sp_years_folder in sp_folders){
+      print(sp_years_folder)
+      sp_csv = list.files(path = sp_years_folder, pattern = 'csv', recursive = T, full.names = T)
+      print(sp_csv)
+
+      
+            list.files('G:/Team_Folders/Steph', pattern = 'gg', recursive = T, include.dirs = T, full.names = T)
+      
+      
+    }
+  }
+}
+
+calculate_percent('G:/Team_Folders/Steph')
 
 
 
