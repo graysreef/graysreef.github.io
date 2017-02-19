@@ -191,7 +191,7 @@ library(tidyverse)
 library(raster)
 library(plotly)
 
-r = raster('G:/Team_Folders/Steph/bsb_2012/mean.tif')
+r = raster('G:/Team_Folders/Steph/bsb/mean.tif')
 
 d = data_frame(
   quantity = raster::getValues(r),
@@ -240,15 +240,22 @@ leaflet() %>%
 
 d_30 = d2 %>% filter(cum_pct_quantity >= 30) %>% head(1)
 
+# d_10 = d2 %>% filter(cum_pct_quantity >=10) %>% head(1)
+
+# d_50 = d2 %>% filter(cum_pct_quantity >= 50) %>% head(1)
+
 plot(r)
 p = ggplot(d2, aes(y=cum_pct_quantity, x=cum_area_km2)) +
   geom_point() +
   geom_segment(x=0, xend=d_30$cum_area_km2, y=d_30$cum_pct_quantity, yend=d_30$cum_pct_quantity) +
+  xlab("Cumulative Area km2") +
+  ylab("Cumulative Percent Quantity Larvae") +
+  # ggtitle("Black Sea Bass 2009 - 2015")
   geom_segment(x=d_30$cum_area_km2, xend=d_30$cum_area_km2, y=0, yend=d_30$cum_pct_quantity) +
   scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
-  #coord_cartesian(xlim = c(0, tail(d$cum_area_km2, 1)), ylim = c(0, 100))
+  # coord_cartesian(xlim = c(0, tail(d$cum_area_km2, 1)), ylim = c(0, 100))
 print(p)
-ggplot2::ggsave('test.png', p)
+ggplot2::ggsave('bsb_area_graph.png', p)
 ggplotly(p)
 
 
@@ -283,29 +290,64 @@ for (i in 1:length(my.dirs)){
 
 }
 
+
+
+
+
 #Process for percent instead of quanity----
+# 
+# calculate_percent = function(dir_root ){
+#   for (sp in c('bsb','gg','rs','sp')){
+#     print(sp)
+#     sp_result = sprintf ('%s.*results', sp )
+#     print(sp_result)
+#     sp_folders = list.files(dir_root, pattern = sp_result, include.dirs = T, full.names = T)
+#     print (sp_folders)
+#     for (sp_years_folder in sp_folders){
+#       print(sp_years_folder)
+#       sp_csv = list.files(path = sp_years_folder, pattern = 'csv', recursive = T, full.names = T)
+#       print(sp_csv)
+# 
+#       
+#             list.files('G:/Team_Folders/Steph', pattern = 'gg', recursive = T, include.dirs = T, full.names = T)
+#       
+#       
+#     }
+#   }
+# }
+# 
+# calculate_percent('G:/Team_Folders/Steph')
 
-calculate_percent = function(dir_root ){
-  for (sp in c('bsb','gg','rs','sp')){
-    print(sp)
-    sp_result = sprintf ('%s.*results', sp )
-    print(sp_result)
-    sp_folders = list.files(dir_root, pattern = sp_result, include.dirs = T, full.names = T)
-    print (sp_folders)
-    for (sp_years_folder in sp_folders){
-      print(sp_years_folder)
-      sp_csv = list.files(path = sp_years_folder, pattern = 'csv', recursive = T, full.names = T)
-      print(sp_csv)
+library(tidyverse)
+library(raster)
+library(plotly)
 
-      
-            list.files('G:/Team_Folders/Steph', pattern = 'gg', recursive = T, include.dirs = T, full.names = T)
-      
-      
-    }
-  }
-}
+r = raster('G:/Team_Folders/Steph/_allspp/mean.tif')
 
-calculate_percent('G:/Team_Folders/Steph')
+d = data_frame(
+  quantity = raster::getValues(r),
+  cellid   = 1:length(quantity),
+  area_km2 = 8)
+
+d2 = d %>%
+  filter(!is.na(quantity)) %>%
+  arrange(desc(quantity)) %>%
+  mutate(
+    pct_quantity     = quantity/sum(quantity)*100,
+    cum_pct_quantity = cumsum(quantity/sum(quantity)*100),
+    cum_area_km2     = cumsum(area_km2))
+tail(d2) # 7208 km2
+tail(d2$cum_area_km2, 1) # 7208 km2
+
+d3 = d %>%
+  left_join(d2, by='cellid')
+summary(d3)
+
+r2 = setValues(r, d3$pct_quantity)
+
+plot(r2) 
+
+writeRaster(r2, "percent.tif", format = "GTiff")
 
 
 
@@ -313,10 +355,6 @@ calculate_percent('G:/Team_Folders/Steph')
 ##sensitivities
 process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_diffusivity')
 process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_mortality')
-
-
-
-
 
 
 
