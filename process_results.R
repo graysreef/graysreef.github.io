@@ -355,7 +355,11 @@ writeRaster(r2, "percent.tif", format = "GTiff")
 ##sensitivities
 process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_diffusivity')
 process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_mortality')
-
+process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_competency')
+process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_all')
+summarize_sppyr('G:/Team_Folders/Steph/bsb_2009_all')
+process_sppyr_dirs('G:/Team_Folders/Steph/rs_2009_competency')
+process_sppyr_dirs('G:/Team_Folders/Steph/rs_2009_diffusivity')
 
 
 # done ----
