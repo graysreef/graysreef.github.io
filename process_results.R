@@ -191,7 +191,7 @@ library(tidyverse)
 library(raster)
 library(plotly)
 
-r = raster('G:/Team_Folders/Steph/bsb/mean.tif')
+r = raster('G:/Team_Folders/Steph/_allspp/mean.tif')
 
 d = data_frame(
   quantity = raster::getValues(r),
@@ -205,7 +205,7 @@ d2 = d %>%
     pct_quantity     = quantity/sum(quantity)*100,
     cum_pct_quantity = cumsum(quantity/sum(quantity)*100),
     cum_area_km2     = cumsum(area_km2))
-tail(d2) # 7208 km2
+tail(d2)# 7208 km2
 tail(d2$cum_area_km2, 1) # 7208 km2
 
 d3 = d %>%
@@ -214,11 +214,23 @@ summary(d3)
 
 r2 = setValues(r, d3$cum_pct_quantity)
 
+r_cum_pct = setValues(r, d3$cum_pct_quantity)
+
 plot(r2) 
+
+filled.contour()
+
+n_cols = 5
+cols = RColorBrewer::brewer.pal(n_cols, 'Spectral')
+lvls = seq(0,100, length.out=n_cols+1)
+filledContour(r_cum_pct, levels=lvls, col = cols)
+
+
+levelplot(r_cum_pct, layers = 1, margin = list(FUN = 'median'), contour=TRUE)
 
 x <- rasterToContour(r2, levels=c(10,30,50,80))
 x
-rgdal::writeOGR(x, "G:/Team_Folders/Steph/contours", layer="contour_bsb_mean", driver="ESRI Shapefile")
+# rgdal::writeOGR(x, "G:/Team_Folders/Steph/contours", layer="contour_bsb_mean", driver="ESRI Shapefile")
 
 
 plot(r2, col='Spectral')
@@ -240,23 +252,28 @@ leaflet() %>%
 
 d_30 = d2 %>% filter(cum_pct_quantity >= 30) %>% head(1)
 
-# d_10 = d2 %>% filter(cum_pct_quantity >=10) %>% head(1)
+d_10 = d2 %>% filter(cum_pct_quantity >=10) %>% head(1)
 
-# d_50 = d2 %>% filter(cum_pct_quantity >= 50) %>% head(1)
+d_50 = d2 %>% filter(cum_pct_quantity >= 50) %>% head(1)
 
 plot(r)
 p = ggplot(d2, aes(y=cum_pct_quantity, x=cum_area_km2)) +
-  geom_point() +
-  geom_segment(x=0, xend=d_30$cum_area_km2, y=d_30$cum_pct_quantity, yend=d_30$cum_pct_quantity) +
   xlab("Cumulative Area km2") +
   ylab("Cumulative Percent Quantity Larvae") +
-  # ggtitle("Black Sea Bass 2009 - 2015")
+  ggtitle("All Species 2009 - 2015") +
+  geom_point() +
+  geom_segment(x=0, xend=d_30$cum_area_km2, y=d_30$cum_pct_quantity, yend=d_30$cum_pct_quantity) +
   geom_segment(x=d_30$cum_area_km2, xend=d_30$cum_area_km2, y=0, yend=d_30$cum_pct_quantity) +
-  scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
+  geom_segment(x=0, xend=d_10$cum_area_km2, y=d_10$cum_pct_quantity, yend=d_10$cum_pct_quantity) +
+  geom_segment(x=d_10$cum_area_km2, xend=d_10$cum_area_km2, y=0, yend=d_10$cum_pct_quantity) +
+  geom_segment(x=0, xend=d_50$cum_area_km2, y=d_50$cum_pct_quantity, yend=d_50$cum_pct_quantity) +
+  geom_segment(x=d_50$cum_area_km2, xend=d_50$cum_area_km2, y=0, yend=d_50$cum_pct_quantity) +
+  scale_y_continuous(expand = c(0,0), breaks = c(10,20,30,40,50,60,70,80,90,100)) + scale_x_continuous(expand = c(0,0))
   # coord_cartesian(xlim = c(0, tail(d$cum_area_km2, 1)), ylim = c(0, 100))
 print(p)
-ggplot2::ggsave('bsb_area_graph.png', p)
+ggplot2::ggsave('all_sp_area_graph.png', p)
 ggplotly(p)
+
 
 
 
@@ -322,7 +339,7 @@ library(tidyverse)
 library(raster)
 library(plotly)
 
-r = raster('G:/Team_Folders/Steph/_allspp/mean.tif')
+r = raster('G:/Team_Folders/Steph/bsb/mean.tif')
 
 d = data_frame(
   quantity = raster::getValues(r),
@@ -348,6 +365,7 @@ r2 = setValues(r, d3$pct_quantity)
 plot(r2) 
 
 writeRaster(r2, "percent.tif", format = "GTiff")
+
 
 
 
