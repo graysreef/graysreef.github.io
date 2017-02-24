@@ -203,51 +203,51 @@ leaflet() %>%
     title = "cum % larvae")
 ```
 
-## Black Sea Bass Area Graph
+<!-- ## Black Sea Bass Area Graph -->
 
-Area Required to Attain Target Percent qunatity of Black Sea Bass Larvae
+<!-- Area Required to Attain Target Percent qunatity of Black Sea Bass Larvae -->
 
-```{r fig.width=7, fig.height=4, echo=FALSE}
+<!-- ```{r fig.width=7, fig.height=7, echo=FALSE} -->
 
-library(tidyverse)
-library(raster)
-library(plotly)
+<!-- library(tidyverse) -->
+<!-- library(raster) -->
+<!-- library(plotly) -->
 
-r = raster('G:/Team_Folders/Steph/bsb/mean.tif')
+<!-- r = raster('G:/Team_Folders/Steph/bsb/mean.tif') -->
 
-d = data_frame(
-  quantity = raster::getValues(r),
-  cellid   = 1:length(quantity),
-  area_km2 = 8)
+<!-- d = data_frame( -->
+<!--   quantity = raster::getValues(r), -->
+<!--   cellid   = 1:length(quantity), -->
+<!--   area_km2 = 8) -->
 
-d2 = d %>%
-  filter(!is.na(quantity)) %>%
-  arrange(desc(quantity)) %>%
-  mutate(
-    pct_quantity     = quantity/sum(quantity)*100,
-    cum_pct_quantity = cumsum(quantity/sum(quantity)*100),
-    cum_area_km2     = cumsum(area_km2))
+<!-- d2 = d %>% -->
+<!--   filter(!is.na(quantity)) %>% -->
+<!--   arrange(desc(quantity)) %>% -->
+<!--   mutate( -->
+<!--     pct_quantity     = quantity/sum(quantity)*100, -->
+<!--     cum_pct_quantity = cumsum(quantity/sum(quantity)*100), -->
+<!--     cum_area_km2     = cumsum(area_km2)) -->
 
-d3 = d %>%
-  left_join(d2, by='cellid')
-summary(d3)
+<!-- d3 = d %>% -->
+<!--   left_join(d2, by='cellid') -->
+<!-- summary(d3) -->
 
-p = ggplot(d2, aes(y=cum_pct_quantity, x=cum_area_km2)) +
-  xlab("Cumulative Area km2") +
-  ylab("Cumulative Percent Quantity Larvae") +
-  ggtitle("Black Sea Bass 2009 - 2015") +
-  geom_point() +
-  # geom_segment(x=0, xend=d_20$cum_area_km2, y=d_20$cum_pct_quantity, yend=d_20$cum_pct_quantity) +
-  # geom_segment(x=d_20$cum_area_km2, xend=d_20$cum_area_km2, y=0, yend=d_20$cum_pct_quantity) +
-  # geom_segment(x=0, xend=d_40$cum_area_km2, y=d_40$cum_pct_quantity, yend=d_40$cum_pct_quantity) +
-  # geom_segment(x=d_40$cum_area_km2, xend=d_40$cum_area_km2, y=0, yend=d_40$cum_pct_quantity) +
-  # geom_segment(x=0, xend=d_60$cum_area_km2, y=d_60$cum_pct_quantity, yend=d_60$cum_pct_quantity) +
-  # geom_segment(x=d_60$cum_area_km2, xend=d_60$cum_area_km2, y=0, yend=d_60$cum_pct_quantity) +
-  scale_y_continuous(expand = c(0,0), breaks = c(20,40,60,80,100)) + scale_x_continuous(expand = c(0,0)) +
-  theme(panel.grid.minor.x = element_blank())
-  # coord_cartesian(xlim = c(0, tail(d$cum_area_km2, 1)), ylim = c(0, 100))
-ggplotly(p)
-```
+<!-- p = ggplot(d2, aes(y=cum_pct_quantity, x=cum_area_km2)) + -->
+<!--   xlab("Cumulative Area km2") + -->
+<!--   ylab("Cumulative Percent Quantity Larvae") + -->
+<!--   ggtitle("Black Sea Bass 2009 - 2015") + -->
+<!--   geom_point() + -->
+<!--   # geom_segment(x=0, xend=d_20$cum_area_km2, y=d_20$cum_pct_quantity, yend=d_20$cum_pct_quantity) + -->
+<!--   # geom_segment(x=d_20$cum_area_km2, xend=d_20$cum_area_km2, y=0, yend=d_20$cum_pct_quantity) + -->
+<!--   # geom_segment(x=0, xend=d_40$cum_area_km2, y=d_40$cum_pct_quantity, yend=d_40$cum_pct_quantity) + -->
+<!--   # geom_segment(x=d_40$cum_area_km2, xend=d_40$cum_area_km2, y=0, yend=d_40$cum_pct_quantity) + -->
+<!--   # geom_segment(x=0, xend=d_60$cum_area_km2, y=d_60$cum_pct_quantity, yend=d_60$cum_pct_quantity) + -->
+<!--   # geom_segment(x=d_60$cum_area_km2, xend=d_60$cum_area_km2, y=0, yend=d_60$cum_pct_quantity) + -->
+<!--   scale_y_continuous(expand = c(0,0), breaks = c(20,40,60,80,100)) + scale_x_continuous(expand = c(0,0)) + -->
+<!--   theme(panel.grid.minor.x = element_blank()) -->
+<!--   # coord_cartesian(xlim = c(0, tail(d$cum_area_km2, 1)), ylim = c(0, 100)) -->
+<!-- ggplotly(p) -->
+<!-- ``` -->
 
 
 
