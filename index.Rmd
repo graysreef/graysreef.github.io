@@ -232,29 +232,20 @@ d3 = d %>%
   left_join(d2, by='cellid')
 summary(d3)
 
-d_20 = d2 %>% filter(cum_pct_quantity >= 20) %>% head(1)
-
-d_40 = d2 %>% filter(cum_pct_quantity >=40) %>% head(1)
-
-d_60 = d2 %>% filter(cum_pct_quantity >= 60) %>% head(1)
-
-plot(r)
 p = ggplot(d2, aes(y=cum_pct_quantity, x=cum_area_km2)) +
   xlab("Cumulative Area km2") +
   ylab("Cumulative Percent Quantity Larvae") +
   ggtitle("Black Sea Bass 2009 - 2015") +
   geom_point() +
-  geom_segment(x=0, xend=d_20$cum_area_km2, y=d_20$cum_pct_quantity, yend=d_20$cum_pct_quantity) +
-  geom_segment(x=d_20$cum_area_km2, xend=d_20$cum_area_km2, y=0, yend=d_20$cum_pct_quantity) +
-  geom_segment(x=0, xend=d_40$cum_area_km2, y=d_40$cum_pct_quantity, yend=d_40$cum_pct_quantity) +
-  geom_segment(x=d_40$cum_area_km2, xend=d_40$cum_area_km2, y=0, yend=d_40$cum_pct_quantity) +
-  geom_segment(x=0, xend=d_60$cum_area_km2, y=d_60$cum_pct_quantity, yend=d_60$cum_pct_quantity) +
-  geom_segment(x=d_60$cum_area_km2, xend=d_60$cum_area_km2, y=0, yend=d_60$cum_pct_quantity) +
+  # geom_segment(x=0, xend=d_20$cum_area_km2, y=d_20$cum_pct_quantity, yend=d_20$cum_pct_quantity) +
+  # geom_segment(x=d_20$cum_area_km2, xend=d_20$cum_area_km2, y=0, yend=d_20$cum_pct_quantity) +
+  # geom_segment(x=0, xend=d_40$cum_area_km2, y=d_40$cum_pct_quantity, yend=d_40$cum_pct_quantity) +
+  # geom_segment(x=d_40$cum_area_km2, xend=d_40$cum_area_km2, y=0, yend=d_40$cum_pct_quantity) +
+  # geom_segment(x=0, xend=d_60$cum_area_km2, y=d_60$cum_pct_quantity, yend=d_60$cum_pct_quantity) +
+  # geom_segment(x=d_60$cum_area_km2, xend=d_60$cum_area_km2, y=0, yend=d_60$cum_pct_quantity) +
   scale_y_continuous(expand = c(0,0), breaks = c(20,40,60,80,100)) + scale_x_continuous(expand = c(0,0)) +
   theme(panel.grid.minor.x = element_blank())
   # coord_cartesian(xlim = c(0, tail(d$cum_area_km2, 1)), ylim = c(0, 100))
-
-# print(p)
 ggplotly(p)
 ```
 
