@@ -1,0 +1,71 @@
+---
+title: "MBON Habitat Prep"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r setup}
+library(sp)
+library(rgdal)
+library(raster)
+library(tidyverse)
+library(stringr)
+```
+
+
+## Raster Manipulation
+
+- [8. Raster data manipulation](http://rspatial.org/spatial/rst/8-rastermanip.html)
+
+```{r}
+dir_tif = 'G:/MBON/habitats_halpern2015_knb/data'
+tifs = setdiff(
+  list.files(dir_tif, '*.\\.tif$'),
+  c('deep_waters_lzw.tif','habitat_num.tif','surface_waters_lzw.tif'))
+
+s = stack(sprintf('%s/%s', dir_tif, tifs))
+names(s) = str_replace(names(s), '_lzw', '')
+
+
+d = data_frame(
+  hab_name = names(s)) %>%
+  mutate(
+    hab_id   = row_number())
+
+study = list(
+  southeast = readOGR('G:/MBON/study_area.gdb','southeast'),
+  socal     = readOGR('G:/MBON/study_area.gdb','socal'))
+
+
+for (i in 1:nrow(d)){ # i=18
+  # set vars
+  lyr     = d$hab_name[i]
+  id      = d$hab_id[i]
+  lyr_num = sprintf('%s_num', lyr)
+  
+  # define layer as numeric id, otherwise 0
+  cat(sprintf('%02d of %d: %s -> %s: 1 -> %d, otherwise 0 -- %s\n', i, nrow(d), lyr, lyr_num, id, Sys.time()))
+  r = is.na(raster(s, lyr)) - 1 * -1 * id
+  s = stack(s, r)
+  writeRaster(
+    r, 
+    sprintf('G:/MBON/tmp/%s.tif', lyr_num), 
+    options=c("COMPRESS=LZW","TFW=YES"), overwrite=T)
+  
+  for (area in names(study)){ # area = names(study)[2]
+    cat(sprintf('  crop to %s -- %s\n', area, Sys.time()))
+    r_area = crop(r, extent(study[[area]]))
+    
+    writeRaster(
+      r_area, 
+      sprintf('G:/MBON/tmp/%s_%s.tif', lyr_num, area), 
+      options=c("COMPRESS=LZW","TFW=YES"), overwrite=T)
+  }
+}
+
+```

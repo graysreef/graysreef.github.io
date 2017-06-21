@@ -145,39 +145,40 @@ summarize_spp = function(dir_root, sp){
   }
 }
 
-# ##for the sum instead of mean
+##for the sum instead of mean
 # summarize_spp = function(dir_root, sp){
-#   # given top-level directory and species code, eg "sp" or "rs" or "bsb",
-#   # summarize sp_yr/mean.tif across years as sp/mean.tif and sp/cv.tif,
-#   # ie average dispersal across year means and variation across year means
-#   # dir_root = 'G:/Team_Folders/Steph'; sp='bsb'
-#   
-#   dirs_results = list.files(dir_root, sprintf('%s_[0-9]{4}$', sp), full.names=T)
-#   rasters_sum = sprintf('%s/sum.tif', dirs_results)
-#   stack_sum   = stack(rasters_sum)
-#   dir_sp = file.path(dir_root, sp)
-#   
-#   if (!file.exists(dir_sp)) dir.create(dir_sp) ##creates the folder with species name (if it doesn't already exist)
-#   
-#   r_mean = mean(stack_sum, na.rm=T)
-#   r_sd = calc(stack_sum, fun=function(x) sd(x, na.rm=T))
-#   r_cv = r_sd / r_mean * 100
-#   
-#   for (v in c('mean','cv','sd')){
-#     
-#     r = get(sprintf('r_%s',v))
-#     
-#     # write to GeoTIFF
-#     writeRaster(r, sprintf('%s/%s_sum.tif', dir_sp, v), overwrite=T)
-#     
-#     # plot to PNG for easy preview
-#     png(sprintf('%s/%s_sum.png', dir_sp, v))
-#     p = levelplot(r, par.settings=viridisTheme, main=sprintf('%s %s', basename(dir_sp), v))
-#     print(p)
-#     dev.off()  
-#     
-#   }
-# }
+#    # given top-level directory and species code, eg "sp" or "rs" or "bsb",
+#    # summarize sp_yr/mean.tif across years as sp/mean.tif and sp/cv.tif,
+#    # ie average dispersal across year means and variation across year means
+#    # dir_root = 'G:/Team_Folders/Steph'; sp='bsb'
+# 
+#    dirs_results = list.files(dir_root, sprintf('%s_[0-9]{4}$', sp), full.names=T)
+#    rasters_sum = sprintf('%s/sum.tif', dirs_results)
+#    stack_sum   = stack(rasters_sum)
+#    dir_sp = file.path(dir_root, sp)
+# 
+#    if (!file.exists(dir_sp)) dir.create(dir_sp) ##creates the folder with species name (if it doesn't already exist)
+#    
+# 
+#    r_mean = mean(stack_sum, na.rm=T)
+#    r_sd = calc(stack_sum, fun=function(x) sd(x, na.rm=T))
+#    r_cv = r_sd / r_mean * 100
+# 
+#    for (v in c('mean','cv','sd')){
+# 
+#      r = get(sprintf('r_%s',v))
+# 
+#      # write to GeoTIFF
+#      writeRaster(r, sprintf('%s/%s_sum.tif', dir_sp, v), overwrite=F)
+# 
+#      # plot to PNG for easy preview
+#      png(sprintf('%s/%s_sum.png', dir_sp, v))
+#      p = levelplot(r, par.settings=viridisTheme, main=sprintf('%s %s', basename(dir_sp), v))
+#      print(p)
+#      dev.off()
+# 
+#    }
+#  }
 
 
 #summarize_spp('G:/Team_Folders/Steph', sp='bsb')
@@ -265,7 +266,7 @@ library(tidyverse)
 library(raster)
 library(plotly)
 
-r = raster('G:/Team_Folders/Steph/_allspp/percent_sum_noseagrass.tif')
+r = raster('G:/Team_Folders/Steph/_allspp/mean_sum_noseagrass.tif')
 
 d = data_frame(
   quantity = raster::getValues(r),
@@ -411,12 +412,12 @@ library(tidyverse)
 library(raster)
 library(plotly)
 
-r = raster('G:/Team_Folders/Steph/_allspp/mean_sum.tif')
+r = raster('G:/Team_Folders/Steph/bsb/mean_sum.tif')
 
 d = data_frame(
   quantity = raster::getValues(r),
   cellid   = 1:length(quantity),
-  area_km2 = 8)
+  area_km2 = 64)
 
 d2 = d %>%
   filter(!is.na(quantity)) %>%
@@ -436,7 +437,7 @@ r2 = setValues(r, d3$cum_pct_quantity) #cum_pct_quantity or pct_quantity based o
 
 plot(r2) 
 
-writeRaster(r2, "cum_percent_sum.tif", format = "GTiff")
+writeRaster(r2, "percent_sum.tif", format = "GTiff")
 
 #sensitivities ---- 
 process_sppyr_dirs('G:/Team_Folders/Steph/bsb_2009_diffusivity')
