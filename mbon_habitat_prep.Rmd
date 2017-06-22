@@ -50,7 +50,7 @@ for (i in 1:nrow(d)){ # i=18
   
   # define layer as numeric id, otherwise 0
   cat(sprintf('%02d of %d: %s -> %s: 1 -> %d, otherwise 0 -- %s\n', i, nrow(d), lyr, lyr_num, id, Sys.time()))
-  r = is.na(raster(s, lyr)) - 1 * -1 * id
+  r = (1 - is.na(raster(s, lyr))) * id
   s = stack(s, r)
   writeRaster(
     r, 
