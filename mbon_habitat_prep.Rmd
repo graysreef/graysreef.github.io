@@ -29,48 +29,73 @@ tifs = setdiff(
   list.files(dir_tif, '*.\\.tif$'),
   c('deep_waters_lzw.tif','habitat_num.tif','surface_waters_lzw.tif'))
 
-s = stack(sprintf('%s/%s', dir_tif, tifs))
-names(s) = str_replace(names(s), '_lzw', '')
-
-
 d = data_frame(
-  hab_name = names(s)) %>%
+  hab_name = tifs) %>%
   mutate(
-    hab_id   = row_number()) # View(d)
+    hab_id = sapply(c(1,10,100,1000,10000,100000), function(x) x * c(1,2,4)) %>% as.vector()); #View(d)
 
 study = list(
   southeast = readOGR('H:/MBON/study_area.gdb','southeast'),
   socal     = readOGR('H:/MBON/study_area.gdb','socal'))
 
-
-for (i in 1:nrow(d)){ # i=18
+for (i in 1:nrow(d)){ # i=1
   # set vars
   lyr     = d$hab_name[i]
   id      = d$hab_id[i]
   lyr_num = sprintf('%s_num', lyr)
+  tif_hab  = file.path(dir_tif, tifs[i])
+  tif_area = sprintf('C:/Temp/mbon_tmp/%s_%s.tif', lyr_num, area)
+  area = 'socal'
   
   # define layer as numeric id, otherwise 0
+  t0 = Sys.time()
   cat(sprintf('%02d of %d: %s -> %s: 1 -> %d, otherwise 0 -- %s\n', i, nrow(d), lyr, lyr_num, id, Sys.time()))
-  r = (1 - is.na(raster(s, lyr))) * id
-  s = stack(s, r)
-  writeRaster(
-    r, 
-    sprintf('H:/MBON/tmp/%s.tif', lyr_num), 
-    options=c("COMPRESS=LZW","TFW=YES"), overwrite=T)
-  
-  # crop to study areas
-  for (area in names(study)){ # area = names(study)[2]
-    cat(sprintf('  crop to %s -- %s\n', area, Sys.time()))
-    r_area = crop(r, extent(study[[area]]))
-    
-    writeRaster(
-      r_area, 
-      sprintf('H:/MBON/tmp/%s_%s.tif', lyr_num, area), 
-      options=c("COMPRESS=LZW","TFW=YES"), overwrite=T)
-  }
+  raster(tif_hab, ext=extent(study[[area]])) %>%  # read in raster, limited to extent of study area
+    (function(x){(1 - is.na(x)) * id}) %>%                       # assign unique habitat id, otherwise zero
+    writeRaster(tif_area, overwrite=T)            # write it out to tif
+  dt = Sys.time() - t0; cat(sprintf('  took %0.1f %s; estimate to completion: %0.1f %s', dt, attr(dt, 'units'), dt*(nrow(d)-i), attr(dt, 'units')))
+              
+  # # crop to study areas
+  # for (area in names(study)){ # area = names(study)[2]
+  #   cat(sprintf('  crop to %s -- %s\n', area, Sys.time()))
+  #   r_area = crop(r, extent(study[[area]]))
+  #   
+  #   writeRaster(
+  #     r_area, 
+  #     sprintf('H:/MBON/tmp/%s_%s.tif', lyr_num, area), 
+  #     options=c("COMPRESS=LZW","TFW=YES"), overwrite=T)
+  # }
 }
 
+# TODO: sum across habitats
+r_sum = sum(stack('C:/Temp/mbon_tmp'))
+
+# CAUTION!!!! move everything out of C:/ into H:/
 ```
+
+```{r raster stats}
+grd      = 'H:/MBON/hab_prep_rc/reclass_sumd'
+freq_csv = 'H:/MBON/hab_prep_rc/reclass_sumd_freq.csv'
+
+r = raster(grd)
+f = freq(r, useNA='ifany', progress='window')
+f %>% 
+  as_tibble() %>%
+  mutate(
+    count_m = count/1e6,
+    pure = ifelse(value %in% d$hab_id, T, F)) %>%
+  arrange(desc(pure), desc(count)) %>%
+  left_join(d, by=c('value'='hab_id')) %>%
+  View()
+
+  write_csv(freq_csv)
+
+#v = getValues(r)
+#v_tbl = table(v)
+
+
+```
+
 
 
 ```{r reclassify}
