@@ -15,6 +15,7 @@ library(rgdal)
 library(raster)
 library(tidyverse)
 library(stringr)
+library(knitr)
 ```
 
 
@@ -23,7 +24,7 @@ library(stringr)
 - [8. Raster data manipulation](http://rspatial.org/spatial/rst/8-rastermanip.html)
 
 ```{r}
-dir_tif = 'G:/MBON/habitats_halpern2015_knb/data'
+dir_tif = 'H:/MBON/habitats_halpern2015_knb/data'
 tifs = setdiff(
   list.files(dir_tif, '*.\\.tif$'),
   c('deep_waters_lzw.tif','habitat_num.tif','surface_waters_lzw.tif'))
@@ -35,11 +36,11 @@ names(s) = str_replace(names(s), '_lzw', '')
 d = data_frame(
   hab_name = names(s)) %>%
   mutate(
-    hab_id   = row_number())
+    hab_id   = row_number()) # View(d)
 
 study = list(
-  southeast = readOGR('G:/MBON/study_area.gdb','southeast'),
-  socal     = readOGR('G:/MBON/study_area.gdb','socal'))
+  southeast = readOGR('H:/MBON/study_area.gdb','southeast'),
+  socal     = readOGR('H:/MBON/study_area.gdb','socal'))
 
 
 for (i in 1:nrow(d)){ # i=18
@@ -54,18 +55,48 @@ for (i in 1:nrow(d)){ # i=18
   s = stack(s, r)
   writeRaster(
     r, 
-    sprintf('G:/MBON/tmp/%s.tif', lyr_num), 
+    sprintf('H:/MBON/tmp/%s.tif', lyr_num), 
     options=c("COMPRESS=LZW","TFW=YES"), overwrite=T)
   
+  # crop to study areas
   for (area in names(study)){ # area = names(study)[2]
     cat(sprintf('  crop to %s -- %s\n', area, Sys.time()))
     r_area = crop(r, extent(study[[area]]))
     
     writeRaster(
       r_area, 
-      sprintf('G:/MBON/tmp/%s_%s.tif', lyr_num, area), 
+      sprintf('H:/MBON/tmp/%s_%s.tif', lyr_num, area), 
       options=c("COMPRESS=LZW","TFW=YES"), overwrite=T)
   }
 }
 
 ```
+
+
+```{r reclassify}
+##figure out how to stick in for loop
+t <- raster("H:/MBON/tmp/suspension_reef_num.tif")
+m <- c(0,0,0, 18,18,400000)
+rclmat <- matrix(m, ncol=3, byrow = TRUE)
+rc <- reclassify(t, rclmat)
+writeRaster(rc, filename = "H:/MBON/reclass/suspension_reef_num.tif")
+```
+
+
+```{r reclassify & crop}
+tif_in    = 'H:/MBON/tmp/suspension_reef_num.tif'
+tif_socal = 'H:/MBON/reclass/suspension_reef_num_socal.tif'
+area      = 'socal'
+
+##figure out how to stick in for loop
+r = raster(tif_in)
+m = matrix(
+  c(0,0,0, 18,18,400000),
+  ncol=3, byrow = TRUE)
+r_r  = reclassify(r, m)
+
+r_rc = crop(r_r, extent(study[[area]]))
+writeRaster(r_rc, filename = tif_socal)
+
+```
+
