@@ -16,6 +16,32 @@ library(raster)
 library(tidyverse)
 library(stringr)
 library(knitr)
+
+dir_data = switch(
+  R.utils::System$getUsername(),
+  bbest = '/Volumes/Best HD/mbon_data_big')
+
+dir_hab = file.path(dir_data, 'halpernetal2015_habitats')
+dir_tmp = file.path(dir_hab, 'tmp')
+dir.create(dir_tmp, showWarnings=F)
+dir.create(dir_hab, showWarnings=F)
+```
+
+
+## Download Habitats from Halpern et al (2015)
+
+[Halpern et al. (2015) Cumulative human impacts: Supplementary data - KNB - doi:10.5063/F19Z92TW.](https://knb.ecoinformatics.org/#view/doi:10.5063/F19Z92TW)
+
+```{r download & unzip, eval=F}
+zip_url = 'https://knb.ecoinformatics.org/knb/d1/mn/v2/packages/application%2Fbagit-097/urn%3Auuid%3A5f309258-67c1-4e62-9f16-622a97508eb3'
+zip     = file.path(dir_data, 'halpernetal2015_habitats.zip')
+
+download.file(zip_url, zip)
+unzip(zip, exdir=dir_hab, junkpaths=T)
+
+for (p_zip in list.files(dir_hab, '.*\\.zip', full.names=T)){ # p_zip = list.files(dir_hab, '.*\\.zip', full.names=T)[1]
+  unzip(p_zip, exdir=dir_hab)
+}
 ```
 
 
@@ -23,54 +49,70 @@ library(knitr)
 
 - [8. Raster data manipulation](http://rspatial.org/spatial/rst/8-rastermanip.html)
 
-```{r}
-dir_tif = 'H:/MBON/habitats_halpern2015_knb/data'
+```{r create hab_id}
+tif_all  = file.path(dir_data, 'hab_id.tif')
+csv_freq = file.path(dir_data, 'hab_id_freq.csv')
+csv_all  = file.path(dir_data, 'hab_id.csv')
+
 tifs = setdiff(
-  list.files(dir_tif, '*.\\.tif$'),
-  c('deep_waters_lzw.tif','habitat_num.tif','surface_waters_lzw.tif'))
+  list.files(dir_hab, '*.\\.tif$'),
+  c('deep_waters_lzw.tif','habitat_num.tif','surface_waters_lzw.tif','ocean_mask.tif'))
 
 d = data_frame(
-  hab_name = tifs) %>%
+  tif = tifs) %>%
   mutate(
-    hab_id = sapply(c(1,10,100,1000,10000,100000), function(x) x * c(1,2,4)) %>% as.vector()); #View(d)
+    name   = str_replace(tifs, '_lzw.tif', ''),
+    id     = sapply(c(1e0,1e1,1e2,1e3,1e4,1e5), function(x) x * c(1,2,4)) %>% as.vector(),
+    tif_id = sprintf('%s_id.tif', name)); # View(d)
 
-study = list(
-  southeast = readOGR('H:/MBON/study_area.gdb','southeast'),
-  socal     = readOGR('H:/MBON/study_area.gdb','socal'))
+#for (i in 1:nrow(d)){ # i=2
+for (i in 17:nrow(d)){ # i=2
+  # vars
+  lyr      = d$name[i]
+  id       = d$id[i]
+  lyr_id   = sprintf('%s_id', lyr)
+  tif      = file.path(dir_hab, d$tif[i])
+  tif_id   = file.path(dir_tmp, d$tif_id[i])
 
-for (i in 1:nrow(d)){ # i=1
-  # set vars
-  lyr     = d$hab_name[i]
-  id      = d$hab_id[i]
-  lyr_num = sprintf('%s_num', lyr)
-  tif_hab  = file.path(dir_tif, tifs[i])
-  tif_area = sprintf('C:/Temp/mbon_tmp/%s_%s.tif', lyr_num, area)
-  area = 'socal'
-  
   # define layer as numeric id, otherwise 0
-  t0 = Sys.time()
-  cat(sprintf('%02d of %d: %s -> %s: 1 -> %d, otherwise 0 -- %s\n', i, nrow(d), lyr, lyr_num, id, Sys.time()))
-  raster(tif_hab, ext=extent(study[[area]])) %>%  # read in raster, limited to extent of study area
-    (function(x){(1 - is.na(x)) * id}) %>%                       # assign unique habitat id, otherwise zero
-    writeRaster(tif_area, overwrite=T)            # write it out to tif
-  dt = Sys.time() - t0; cat(sprintf('  took %0.1f %s; estimate to completion: %0.1f %s', dt, attr(dt, 'units'), dt*(nrow(d)-i), attr(dt, 'units')))
-              
-  # # crop to study areas
-  # for (area in names(study)){ # area = names(study)[2]
-  #   cat(sprintf('  crop to %s -- %s\n', area, Sys.time()))
-  #   r_area = crop(r, extent(study[[area]]))
-  #   
-  #   writeRaster(
-  #     r_area, 
-  #     sprintf('H:/MBON/tmp/%s_%s.tif', lyr_num, area), 
-  #     options=c("COMPRESS=LZW","TFW=YES"), overwrite=T)
-  # }
+  t0 = Sys.time(); cat(sprintf('%02d of %d: %s -> %s: 1 -> %d, otherwise 0 -- %s\n', i, nrow(d), lyr, lyr_id, id, Sys.time()))
+  r = raster(tif)                      # read raster
+  r = (1 - is.na(r)) * id              # assign unique habitat id, otherwise zero
+  writeRaster(r, tif_id, overwrite=T)  # write tif
+  dt = Sys.time() - t0; cat(sprintf('  took %0.1f %s; estimated to complete %s\n', dt, attr(dt, 'units'), Sys.time() + dt*(nrow(d)-i)))
 }
 
-# TODO: sum across habitats
-r_sum = sum(stack('C:/Temp/mbon_tmp'))
+r_m = stack(list.files(dir_tmp, '.*\\.tif', full.names=T)) %>% 
+  sum() %>%      # sum across habitats
+  mask(
+    raster(file.path(dir_hab, 'ocean_mask.tif')), 
+    maskvalue=0) # ocean is 79.3% of earth surface?
 
-# CAUTION!!!! move everything out of C:/ into H:/
+writeRaster(r_m, tif_all, overwrite=T)
+
+hab_in_value = function(val, hab, d){
+# TODO: write function testing habitat for given pixel value, return True or False; 
+#       to be used in dplyr::mutate() on freq() %>% as_tibble() for pixel value rows x hab columns
+# - get digit in eth place (eg 2 for 1e2, ie 3 for 4321) using division modulus and remainder: 4321 %/% 1e2 %% 10 = 3
+# - then use ifelse(value %in% ...
+#   - 1 (eg beach): c(1,3,5,7)
+#   - 2 (eg coral_reef): c(2,3,6,7)
+#   - 4 (eg d_h_bottom): c(4,5,6,7)
+}
+  
+f = freq(r_sum_m, useNA='ifany', progress='text')
+f = f %>% 
+  as_tibble() %>%
+  mutate(
+    count_m = count/1e6,
+    pure = ifelse(value %in% d$id, T, F)) %>%
+  arrange(desc(pure), desc(count)) %>%
+  left_join(d, by=c('value'='id'))
+  # d %>%
+  #   mutate()
+  #   spread(name)
+  # View()
+write_csv(f, csv_freq)
 ```
 
 ```{r raster stats}
@@ -78,7 +120,7 @@ grd      = 'H:/MBON/hab_prep_rc/reclass_sumd'
 freq_csv = 'H:/MBON/hab_prep_rc/reclass_sumd_freq.csv'
 
 r = raster(grd)
-f = freq(r, useNA='ifany', progress='window')
+f = freq(r, useNA='ifany', progress='text')
 f %>% 
   as_tibble() %>%
   mutate(
