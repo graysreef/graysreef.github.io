@@ -51,8 +51,8 @@ for (p_zip in list.files(dir_hab, '.*\\.zip', full.names=T)){ # p_zip = list.fil
 
 ```{r create hab_id}
 tif_all  = file.path(dir_data, 'hab_id.tif')
-csv_freq = file.path(dir_data, 'hab_id_freq.csv')
 csv_all  = file.path(dir_data, 'hab_id.csv')
+csv_freq = file.path(dir_data, 'hab_id_freq.csv')
 
 tifs = setdiff(
   list.files(dir_hab, '*.\\.tif$'),
@@ -65,8 +65,8 @@ d = data_frame(
     id     = sapply(c(1e0,1e1,1e2,1e3,1e4,1e5), function(x) x * c(1,2,4)) %>% as.vector(),
     tif_id = sprintf('%s_id.tif', name)); # View(d)
 
-#for (i in 1:nrow(d)){ # i=2
-for (i in 17:nrow(d)){ # i=2
+for (i in 1:nrow(d)){ # i=2
+#for (i in 17:nrow(d)){ # i=2
   # vars
   lyr      = d$name[i]
   id       = d$id[i]
@@ -75,11 +75,17 @@ for (i in 17:nrow(d)){ # i=2
   tif_id   = file.path(dir_tmp, d$tif_id[i])
 
   # define layer as numeric id, otherwise 0
-  t0 = Sys.time(); cat(sprintf('%02d of %d: %s -> %s: 1 -> %d, otherwise 0 -- %s\n', i, nrow(d), lyr, lyr_id, id, Sys.time()))
-  r = raster(tif)                      # read raster
-  r = (1 - is.na(r)) * id              # assign unique habitat id, otherwise zero
-  writeRaster(r, tif_id, overwrite=T)  # write tif
-  dt = Sys.time() - t0; cat(sprintf('  took %0.1f %s; estimated to complete %s\n', dt, attr(dt, 'units'), Sys.time() + dt*(nrow(d)-i)))
+  if (!file.exists(tif_id)){
+    t0 = Sys.time()
+    cat(sprintf('%02d of %d: %s -> %s: 1 -> %d, otherwise 0 -- %s\n', i, nrow(d), lyr, lyr_id, id, Sys.time()))
+    
+    r = raster(tif)                      # read raster
+    r = (1 - is.na(r)) * id              # assign unique habitat id, otherwise zero
+    writeRaster(r, tif_id, overwrite=T)  # write tif
+    
+    dt = Sys.time() - t0
+    cat(sprintf('  took %0.1f %s; estimated to complete %s\n', dt, attr(dt, 'units'), Sys.time() + dt*(nrow(d)-i)))
+  }
 }
 
 r_m = stack(list.files(dir_tmp, '.*\\.tif', full.names=T)) %>% 
@@ -90,17 +96,19 @@ r_m = stack(list.files(dir_tmp, '.*\\.tif', full.names=T)) %>%
 
 writeRaster(r_m, tif_all, overwrite=T)
 
+r_m = raster(tif_all)
+
 hab_in_value = function(val, hab, d){
 # TODO: write function testing habitat for given pixel value, return True or False; 
 #       to be used in dplyr::mutate() on freq() %>% as_tibble() for pixel value rows x hab columns
 # - get digit in eth place (eg 2 for 1e2, ie 3 for 4321) using division modulus and remainder: 4321 %/% 1e2 %% 10 = 3
 # - then use ifelse(value %in% ...
-#   - 1 (eg beach): c(1,3,5,7)
+#   - 1 (eg beach):      c(1,3,5,7)
 #   - 2 (eg coral_reef): c(2,3,6,7)
 #   - 4 (eg d_h_bottom): c(4,5,6,7)
 }
   
-f = freq(r_sum_m, useNA='ifany', progress='text')
+f = freq(r_m, useNA='ifany', progress='text')
 f = f %>% 
   as_tibble() %>%
   mutate(
