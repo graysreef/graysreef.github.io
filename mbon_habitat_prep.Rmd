@@ -175,3 +175,45 @@ writeRaster(r_rc, filename = tif_socal)
 
 ```
 
+```{r, input raster setup download depth}
+library(rgdal)  # geospatial data abstration library for R
+library(raster)
+library(marmap)  # geospatial data abstration library for R
+#   see vignettes in https://cran.r-project.org/web/packages/marmap
+
+# set working directory
+setwd('P:/depth')
+
+
+
+# old method
+#r = raster::getData('SRTM', download=TRUE, path='.', lon=graysreef_xy[1], lat=graysreef_xy[2])
+
+# get other data, including ecoregions for study area extent
+mbnms_xy = c(-122.4404509, 36.5722023)
+eco_rgn = readOGR('P:/study_area','cal_rgn_water')
+
+# get bounding box of ecoregions
+b = bbox(eco_rgn)
+
+# get depth raster
+depth <- getNOAA.bathy(
+  lon1 = b[1], lon2 = b[3],
+  lat1 = b[2], lat2 = b[4], resolution = 1)
+
+# write to tif
+raster::writeRaster(as.raster(depth), 'P:/depth/depth_calrgn_etopo1.tif')
+
+# setup color palettes
+blues <- c("lightsteelblue4", "lightsteelblue3",
+           "lightsteelblue2", "lightsteelblue1")
+greys <- c(grey(0.6), grey(0.93), grey(0.99))
+
+# plot raster
+plot(depth, image = TRUE, land = TRUE, lwd = 0.03,
+     bpal = list(c(0, max(depth), greys),
+                 c(min(depth), 0, blues)))
+# plot coastline
+plot(depth, n = 1, lwd = 0.4, add = TRUE)
+```
+
